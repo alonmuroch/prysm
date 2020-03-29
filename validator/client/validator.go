@@ -62,9 +62,9 @@ func NewValidatorImplementation(
 		emitAccountMetrics bool,
 		prevBalance map[[48]byte]uint64,
 		domainDataCache *ristretto.Cache,
-	) *validator {
+	) validator {
 
-	return &validator{
+	return validator{
 		genesisTime:          0,
 		ticker:               nil,
 		db:                   db,
