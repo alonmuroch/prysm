@@ -51,6 +51,40 @@ type validator struct {
 	domainDataCache      *ristretto.Cache
 }
 
+func NewValidatorImplementation(
+		db *db.Store,
+		validatorClient ethpb.BeaconNodeValidatorClient,
+		beaconClient ethpb.BeaconChainClient,
+		node ethpb.NodeClient,
+		keyManager keymanager.KeyManager,
+		graffiti []byte,
+		logValidatorBalances bool,
+		emitAccountMetrics bool,
+		prevBalance map[[48]byte]uint64,
+		attLogs map[[32]byte]*attSubmitted,
+		domainDataCache *ristretto.Cache,
+	) *validator {
+
+	return &validator{
+		genesisTime:          0,
+		ticker:               nil,
+		db:                   db,
+		duties:               nil,
+		validatorClient:      validatorClient,
+		beaconClient:         beaconClient,
+		graffiti:             graffiti,
+		node:                 node,
+		keyManager:           keyManager,
+		prevBalance:          prevBalance,
+		logValidatorBalances: logValidatorBalances,
+		emitAccountMetrics:   emitAccountMetrics,
+		attLogs:              attLogs,
+		attLogsLock:          sync.Mutex{},
+		domainDataLock:       sync.Mutex{},
+		domainDataCache:      domainDataCache,
+	}
+}
+
 var validatorStatusesGaugeVec = promauto.NewGaugeVec(
 	prometheus.GaugeOpts{
 		Namespace: "validator",
