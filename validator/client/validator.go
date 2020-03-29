@@ -61,7 +61,6 @@ func NewValidatorImplementation(
 		logValidatorBalances bool,
 		emitAccountMetrics bool,
 		prevBalance map[[48]byte]uint64,
-		attLogs map[[32]byte]*attSubmitted,
 		domainDataCache *ristretto.Cache,
 	) *validator {
 
@@ -78,7 +77,7 @@ func NewValidatorImplementation(
 		prevBalance:          prevBalance,
 		logValidatorBalances: logValidatorBalances,
 		emitAccountMetrics:   emitAccountMetrics,
-		attLogs:              attLogs,
+		attLogs:              make(map[[32]byte]*attSubmitted),
 		attLogsLock:          sync.Mutex{},
 		domainDataLock:       sync.Mutex{},
 		domainDataCache:      domainDataCache,
