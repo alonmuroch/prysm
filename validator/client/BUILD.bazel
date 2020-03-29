@@ -14,7 +14,7 @@ go_library(
         "validator_propose.go",
     ],
     importpath = "github.com/prysmaticlabs/prysm/validator/client",
-    visibility = ["//validator:__subpackages__"],
+    visibility = ["//visibility:public"],
     deps = [
         "//beacon-chain/core/helpers:go_default_library",
         "//proto/beacon/rpc/v1:go_default_library",
