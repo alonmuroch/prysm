@@ -203,7 +203,7 @@ func (km *Wallet) runListener(watcher *fsnotify.Watcher, base string) {
 				if !ok {
 					return
 				}
-				if event.Op&fsnotify.Write == fsnotify.Write {
+				if event.Op&fsnotify.Create == fsnotify.Create {
 					// A file has been written to; add it (handleKeyAtPath() will handle situations where this isn't a key).
 					path := strings.TrimPrefix(event.Name, base)
 					km.handleKeyAtPath(path)
