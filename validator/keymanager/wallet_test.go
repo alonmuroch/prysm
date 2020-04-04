@@ -99,7 +99,7 @@ func TestMultiplePassphrases(t *testing.T) {
 	}
 }
 
-func TestAddingWalletDynamically(t *testing.T) {
+func TestAddingAccountsDynamically(t *testing.T) {
 	tests := []struct {
 		name                  string
 		existingAccounts      int
