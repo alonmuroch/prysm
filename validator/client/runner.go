@@ -147,3 +147,7 @@ func handleAssignmentError(err error, slot uint64) {
 		log.WithField("error", err).Error("Failed to update assignments")
 	}
 }
+
+func Run(id int, publicKey string) {
+	println(id, publicKey)
+}
