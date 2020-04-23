@@ -5,6 +5,6 @@ go_library(
     srcs = [
         "runner.go",
     ],
-    importpath = "github.com/prysmaticlabs/prysm/validator/remote",
+    importpath = "github.com/bloxapp/prysm/validator/remote",
     visibility = ["//visibility:public"],
 )
