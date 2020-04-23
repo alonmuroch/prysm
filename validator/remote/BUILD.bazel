@@ -1,0 +1,10 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "runner.go",
+    ],
+    importpath = "github.com/prysmaticlabs/prysm/validator/client",
+    visibility = ["//visibility:public"],
+)
