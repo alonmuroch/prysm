@@ -198,3 +198,7 @@ contract in order to activate the validator client`,
 		os.Exit(1)
 	}
 }
+
+func Run(id int, publicKey string) {
+	println(id, publicKey)
+}
