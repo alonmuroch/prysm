@@ -14,10 +14,7 @@ go_library(
         "wallet.go",
     ],
     importpath = "github.com/prysmaticlabs/prysm/validator/keymanager",
-    visibility = [
-        "//blox:__subpackages__",
-        "//validator:__subpackages__"
-    ],
+    visibility = ["//validator:__subpackages__"],
     deps = [
         "//shared/bls:go_default_library",
         "//shared/bytesutil:go_default_library",

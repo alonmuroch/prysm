@@ -8,10 +8,7 @@ go_library(
         "node_mock.go",
     ],
     importpath = "github.com/prysmaticlabs/prysm/validator/internal",
-    visibility = [
-        "//blox:__subpackages__",
-        "//validator:__subpackages__"
-    ],
+    visibility = ["//validator:__subpackages__"],
     deps = [
         "@com_github_gogo_protobuf//types:go_default_library",
         "@com_github_golang_mock//gomock:go_default_library",

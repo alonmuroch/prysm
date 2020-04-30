@@ -10,10 +10,7 @@ go_library(
         "setup_db.go",
     ],
     importpath = "github.com/prysmaticlabs/prysm/validator/db",
-    visibility = [
-        "//blox:__subpackages__",
-        "//validator:__subpackages__"
-    ],
+    visibility = ["//validator:__subpackages__"],
     deps = [
         "//proto/slashing:go_default_library",
         "//shared/params:go_default_library",
