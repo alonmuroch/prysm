@@ -25,6 +25,7 @@ go_library(
         "//slasher:__subpackages__",
         "//tools:__subpackages__",
         "//validator:__subpackages__",
+        "//blox:__subpackages__",
     ],
     deps = [
         "//beacon-chain/cache:go_default_library",
