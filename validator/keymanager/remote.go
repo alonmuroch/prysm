@@ -167,9 +167,9 @@ func (km *Remote) SignGeneric(pubKey [48]byte, root [32]byte, domain [32]byte) (
 		return nil, err
 	}
 	switch resp.State {
-	case pb.SignState_DENIED:
+	case pb.ResponseState_DENIED:
 		return nil, ErrDenied
-	case pb.SignState_FAILED:
+	case pb.ResponseState_FAILED:
 		return nil, ErrCannotSign
 	}
 	return bls.SignatureFromBytes(resp.Signature)
@@ -198,9 +198,9 @@ func (km *Remote) SignProposal(pubKey [48]byte, domain [32]byte, data *ethpb.Bea
 		return nil, err
 	}
 	switch resp.State {
-	case pb.SignState_DENIED:
+	case pb.ResponseState_DENIED:
 		return nil, ErrDenied
-	case pb.SignState_FAILED:
+	case pb.ResponseState_FAILED:
 		return nil, ErrCannotSign
 	}
 	return bls.SignatureFromBytes(resp.Signature)
@@ -236,9 +236,9 @@ func (km *Remote) SignAttestation(pubKey [48]byte, domain [32]byte, data *ethpb.
 		return nil, err
 	}
 	switch resp.State {
-	case pb.SignState_DENIED:
+	case pb.ResponseState_DENIED:
 		return nil, ErrDenied
-	case pb.SignState_FAILED:
+	case pb.ResponseState_FAILED:
 		return nil, ErrCannotSign
 	}
 	return bls.SignatureFromBytes(resp.Signature)
