@@ -59,6 +59,28 @@ type Params struct {
 	remoteWalletClientKey  string
 }
 
+func New(
+	beaconRPCProvider string,
+	keyManager string,
+	keyManagerOpts string,
+	remoteWalletAccount string,
+	remoteWalletLocation string,
+	remoteWalletCert string,
+	remoteWalletClientCert string,
+	remoteWalletClientKey string,
+) *Params {
+	return &Params{
+		beaconRPCProvider,
+		keyManager,
+		keyManagerOpts,
+		remoteWalletAccount,
+		remoteWalletLocation,
+		remoteWalletCert,
+		remoteWalletClientCert,
+		remoteWalletClientKey,
+	}
+}
+
 func (p *Params) BeaconRPCProvider() string {
 	return p.beaconRPCProvider
 }
