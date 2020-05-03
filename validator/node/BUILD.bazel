@@ -17,7 +17,8 @@ go_library(
     srcs = ["node.go"],
     importpath = "github.com/prysmaticlabs/prysm/validator/node",
     visibility = [
-        "//visibility:public",
+        "//blox:__subpackages__",
+        "//validator:__subpackages__"
     ],
     deps = [
         "//shared:go_default_library",
