@@ -5,7 +5,7 @@ go_library(
     srcs = [
         "runner.go",
     ],
-    importpath = "github.com/bloxapp/prysm/blox/client",
+    importpath = "github.com/prysmaticlabs/prysm/blox/client",
     visibility = [
         "//visibility:public",
     ],

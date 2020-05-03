@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/bloxapp/prysm/blox/client"
+	"github.com/prysmaticlabs/prysm/blox/client"
 )
 
 func main() {
