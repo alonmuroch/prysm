@@ -126,7 +126,7 @@ func NewRemoteWallet(input string) (KeyManager, string, error) {
 		// Receive large messages without erroring.
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMessageSize)),
 	}
-
+	//TODO NICK NEED IT 1
 	conn, err := grpc.Dial(opts.Location, grpcOpts...)
 	if err != nil {
 		return nil, remoteOptsHelp, errors.New("failed to connect to remote wallet")
@@ -161,6 +161,7 @@ func (km *Remote) Sign(pubKey [48]byte, root [32]byte) (*bls.Signature, error) {
 
 // SignGeneric signs a generic message for the validator to broadcast.
 func (km *Remote) SignGeneric(pubKey [48]byte, root [32]byte, domain [32]byte) (*bls.Signature, error) {
+	//TODO NICK NEED IT
 	accountInfo, exists := km.accounts[pubKey]
 	if !exists {
 		return nil, ErrNoSuchKey
@@ -187,6 +188,7 @@ func (km *Remote) SignGeneric(pubKey [48]byte, root [32]byte, domain [32]byte) (
 
 // SignProposal signs a block proposal for the validator to broadcast.
 func (km *Remote) SignProposal(pubKey [48]byte, domain [32]byte, data *ethpb.BeaconBlockHeader) (*bls.Signature, error) {
+	//TODO NICK NEED IT 4
 	accountInfo, exists := km.accounts[pubKey]
 	if !exists {
 		return nil, ErrNoSuchKey
@@ -219,6 +221,7 @@ func (km *Remote) SignProposal(pubKey [48]byte, domain [32]byte, data *ethpb.Bea
 
 // SignAttestation signs an attestation for the validator to broadcast.
 func (km *Remote) SignAttestation(pubKey [48]byte, domain [32]byte, data *ethpb.AttestationData) (*bls.Signature, error) {
+	//TODO NICK NEED IT 2
 	accountInfo, exists := km.accounts[pubKey]
 	if !exists {
 		return nil, ErrNoSuchKey
@@ -257,6 +260,7 @@ func (km *Remote) SignAttestation(pubKey [48]byte, domain [32]byte, data *ethpb.
 
 // RefreshValidatingKeys refreshes the list of validating keys from the remote signer.
 func (km *Remote) RefreshValidatingKeys() error {
+	//TODO NICK NEED IT 3
 	listerClient := pb.NewListerClient(km.conn)
 	listAccountsReq := &pb.ListAccountsRequest{
 		Paths: km.paths,

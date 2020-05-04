@@ -1,17 +1,100 @@
 package main
 
-import (
-	"github.com/prysmaticlabs/prysm/blox/client"
-)
+import "github.com/prysmaticlabs/prysm/blox/client"
+
+var loc = "localhost:8088"
+var ca = `-----BEGIN CERTIFICATE-----
+MIIFBDCCAuygAwIBAgIBATANBgkqhkiG9w0BAQsFADAiMSAwHgYDVQQDExdXYWxs
+ZXQgZGFlbW9uIGF1dGhvcml0eTAeFw0yMDA0MjYxMDQ2MjlaFw0yMzA0MjYxMDQ2
+MTVaMCIxIDAeBgNVBAMTF1dhbGxldCBkYWVtb24gYXV0aG9yaXR5MIICIjANBgkq
+hkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAzOfDZrcfIul+TZThzvSU+bsPdnsJl4IU
+HHS9CkynRGT4yC9dKnCLazsOL4npb2CyOIsQ1x7QzoiAgJ0gJw8fWQpMOt+qeRU3
+lZ8nmRkHKHhhc7UiG6d7obhSonAJkMCohdeUpHn8BzTezMYeANtm/pODbEVrlaIv
+hiIDZ+gDVHOkQmKkaTKCtFZNDepDYkcB7XbkpioIJyO9zl0wslOii4rmXMxhrMrx
+Qn0OabXXqyJe9TppCNgyz4v+exMBGf0hn9gQRu5drRTDRbGeJFl5qy1qqxpW9vEc
+3vH2VrSjDrKp1wYNbFF96BEGB+ACrCaFsLA3g/AwSH8mQYM8TwoNqgID0Zn9vBoL
+UteTSu3HN1f+4QBq4xpU0C2SKCEorE/BGllEifyk8eJB6rsJyr2RnjfAcjQGwTvB
+rDNu76vXPM9GlnnFEKQqm9afqgl9BNwale8kT9dG1/G9jnGeQ9K2PC51j3eTEmns
+CuTmZpMNv9SiL3/u084cSGQb7uCM32u5HD5dL4ihDqlbeHWbv3a7yHcS3vbhE5nu
+7cyMlC2Vux3HJ6tF5Csx34+d0gq3DhzPWaFD6Pcw24+OiB/KLQJEhwXOn5+1k2+d
+CRU4QqAB7tHnPf1/F9FPUaTGYAjr5Bj70amlFr1N+vnmSioqYELnLjUJL04Ss16l
+Ai9/aD35ilkCAwEAAaNFMEMwDgYDVR0PAQH/BAQDAgEGMBIGA1UdEwEB/wQIMAYB
+Af8CAQAwHQYDVR0OBBYEFK6QQIy8hgI1fCX/m5+J74DuAr1fMA0GCSqGSIb3DQEB
+CwUAA4ICAQDHGdZ2B+1jihNFUPsJS2gEFnS9TXeevWp4hNzn8DeakCUbbd/6Vi7s
+M7OpftmSU6/oBM1EoqxofPdPepf/SlfwZKe6vEaSRSSvoMXmrbn/a2uRZiBft3Pk
+gHWJwsZFv1C5E5394qVqBIXY45mxFAqLeWIiVNgpZpkDGsqntf7TuVEwrzxAmSFH
+ADzhbXJ9XBo12ji3T/wtesiZlHGc3t+gjd5XGgQ/OF5FLQdzAa0lFIjsp1j35CXD
+YT1dQf1eFJYxE1n/1yFqXaJmIWdCo0as3omeWbJB9HObh0kVmQulSeYQ2/oN5Fok
+poUYnrIXT03Na42Ohs6hA4iq0FbR+wgxOO00JAcqSzKbL6b9kytIl9j6p/kJ9mY8
+9E/RT32+jKSytfR5JBrtyOe9MhIP3ZDYpeR/o5A+5Twu9VNX2eRoqIvApBWFUvRZ
+WKSvoqnWDq14Ak/qFMY/DcxD59JyuSeUis0uvrHc34+Gju8a9kFwF9XdM+nLSiCL
+GD2NEFWSospRgmjoxOJp7Y+s0Cxgk2AkTeShlfOSslzJ4O6bjmo7iwglD4P55uOU
+THSP5m2GSEk0dz37tZdR3E5V8Os2l4B0H0Rl1gLG7kxFDSnA+FsIEgFYUpFs1tuY
+M2DEujAzzgmwINWOWR+vu29R28qhApjwIROI6JkO0/ve+z43tErlVA==
+-----END CERTIFICATE-----`
+var cCa = `-----BEGIN CERTIFICATE-----
+MIIEMDCCAhigAwIBAgIRAMzi21rJC7ZS8zyKI8NZ3okwDQYJKoZIhvcNAQELBQAw
+IjEgMB4GA1UEAxMXV2FsbGV0IGRhZW1vbiBhdXRob3JpdHkwHhcNMjAwNDI2MTA1
+MjIwWhcNMjMwNDI2MTA0NjE0WjASMRAwDgYDVQQDEwdjbGllbnQxMIIBIjANBgkq
+hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsHSGlAPJzczApEJMbft/ZqMqZL+CJsCI
++IAoLaxqSfZZoCEIU9PJ4FSQU0ZLFUMmkt5h0ZLd76IFiosQVnOLr/GdAkNdjWnj
+fB2mfT9GZNtLKSJAhbkkNanowVUlKW8GW4TQGD4UP5mycQ+LbeMXjpzwCndzyZuM
+ZXtjs45eA8IrLcxYAJtnt1WBedipiQEBLA2WJGxTRl+4Ut007pqot2eFYkJEOgvR
+TNJXyhB6WTJKOAaYACpmG8Zzfy6MLiAAQGuez6DcR4E5/fjlkf8dbUdFaG6Sluto
+87RFkK9/NlpPRKi3vqyALm8VDJ/Q0gtAuW9FJy22273ObS/RCxd1pwIDAQABo3Ew
+bzAOBgNVHQ8BAf8EBAMCA7gwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMC
+MB0GA1UdDgQWBBTkiIlEo19HLFHH8BUIYuvFtJ7bSTAfBgNVHSMEGDAWgBSukECM
+vIYCNXwl/5ufie+A7gK9XzANBgkqhkiG9w0BAQsFAAOCAgEAW8yDY0GyB0Yd2z4G
+/RxtcC6AJgbZJZ+psZWrkVCEdk1Sx4O2EaA4K9bHum/5vdLJeInmkTMBAGBjIZXE
+15uCU9T3D3GLOAOVGkeBUOpvITfMGae8uA8IqzBHN/tGhyqJiEPUETzgIQQ8ayu+
+icSms8BROWMlV4Xzyj5HFodi3pxcJIG3yeQDkRwsGCbhPqUnN3nBNtoNlrd7cWw3
+iVrmZnd8QmaxfEF90XWasMMfL/bHSX8Xgq+qZaoGJyHOCzFxCAqVzmWO0r4W4NzQ
+HQeU6W5RDYxtlPaPPCPHDxs4Up7f4T4VHyL3ZuTa0OloXgF1BlqqRKAFFHLvg6//
+pPkhq5DrKd5xdrJkhhTnaQUowrN5VB6IAqJvx878+cIkLL4a48PId++MiHXCAG8f
+8Mqox/nrXcUzSyBtqi71bq28YPny2Z7J4KUbO2US1jv8FTFoS0gu9ibBnlqyot80
+Zk876jONpZPr2wsGP/XIMejjwdfOXCzeHZs0n5sJWw6cjacpo/ndUyUE4nmvpqgo
+m6oskSZ2Ia1mj/8j24UOpcZhAfIqYEGeYSCI4auaiwR/KRmE8095TPn3pT85Y3R9
+PHdHs/rs71g3h8PoXRoUtHY9G/p4UOIS/YyKoH+edHJXpUoI4dpBiGufuCyd2BzV
+HGKDMLhA/lgnFQMYe+iK1EmhbA8=
+-----END CERTIFICATE-----`
+var cK = `-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEAsHSGlAPJzczApEJMbft/ZqMqZL+CJsCI+IAoLaxqSfZZoCEI
+U9PJ4FSQU0ZLFUMmkt5h0ZLd76IFiosQVnOLr/GdAkNdjWnjfB2mfT9GZNtLKSJA
+hbkkNanowVUlKW8GW4TQGD4UP5mycQ+LbeMXjpzwCndzyZuMZXtjs45eA8IrLcxY
+AJtnt1WBedipiQEBLA2WJGxTRl+4Ut007pqot2eFYkJEOgvRTNJXyhB6WTJKOAaY
+ACpmG8Zzfy6MLiAAQGuez6DcR4E5/fjlkf8dbUdFaG6Sluto87RFkK9/NlpPRKi3
+vqyALm8VDJ/Q0gtAuW9FJy22273ObS/RCxd1pwIDAQABAoIBAFOMqRg2fvwiAekE
+t1mwJo+7nFwdzYt5yKEZVWzi4WTp72ABpAbFFiZRBBFaDD0iEYajI1/vEYTgi40g
+8Xhtt2t0lKo4qXhG9f6Tr3xIVJV2vCza2gA3PKzoKZw5K6JlvnXg+gMwibffl30v
+Jg6+4y2Uo5fhHYMNUrnOZdPkCiHuqetXibxZrmNP3PjIYyuCeG4K1HfYTC2xIxrl
+N9vtECoS2lRzf6bbAVZqvEMGUagmm1SRsUzeMfnYc7es46dvbWpr1CfeAg9tvHDd
+7Q5HDc/iyre9JYy57QdsIVLVaXV9vyiFbNEGSq/Byo39uPx3Eeg5MkCpIcKvKw42
+mITkfdECgYEA1Uu2G5v64rKkpG1qHuQfIemMaak1dJq8sMY8YcrYIcmVnuhum379
+wzwnlonWDWkdzo6Bt0+KJZ7662W/CvQ05VUKaTyMW0M/nMhGj3cjGe70WB5gvINo
+lo5wB801iM76Z/hIT38FP8ymCkWiAbqYhmJqdW50CvlDzg73vjOfyg8CgYEA08iV
+OYPKmId5HfxbswtU28hKKOdQR29YNq4lAVy5uUjjtVRIhm7rkbIXLTW/BOl6XUKa
+OJZL9v9vgjECLwwS0A/XhfrP2YAjH7VmllHeSBdWJcmyQK5uLLH2umTR+jUwdjMN
+l8FwQrddbc9UaE48FheJHjYk39GbNYbV89fUkukCgYBEPtJIqTKv4CrPtXZz5deU
+OS7FC+/fnDbtdLATNhzLSr2Ft6bUN+Cn3BJqlzWW2uA/m9cjON7hxKlSMh7bOWHH
+Utte6pGaDb1Hw8jX1G21uYASxb1786u+KFruFBmh6V+zbnxsex7J2Af0V21LklGF
+Be48HpggfrrULnPUNp5UvwKBgQCshUqidqy0Qi+08J2WpdVz0J4w4fXwq1B2Aric
+enfE6w6r6UPHV1ZI8oWUy6KXEsceb6IIFM8/H2gr61Z3EuPEYBNWzjFBYfO64d/2
+9iwYGAKSd9Lgg/e2KybtQjIXG/slXoNlKywS/SJ70JhW+9xQts15Mewp86r3GKbz
+o89D+QKBgQC4DULvLVOm1OJfdfYCXUMqmCtp9DHuxxVWHXeQHKcPMz+3wxE/KHT9
+fNbNTrd4ReD6S1bihAc6t+pIVrrvnJBJcS6RwgZZpkgu77POWdZc056n7ADQ1Ls0
+JiJBp/PMQyJojY5JK8gKeJ/oAkADMI4nwbwIgGg8e0UNEE+2EeZy6Q==
+-----END RSA PRIVATE KEY-----`
+var acc = []string{"NValidator/Account.*"}
 
 func main() {
-	params := client.New(
-		"100.65.90.215:4000",
-		"remote",
-		"{\"location\":\"localhost:8088\",\"accounts\":[\"NValidator/Account.*\"],\"certificates\":{\"ca_cert\":\"/Users/nick/GoLandProjects/bloxapp_prysm/credentials/localhost/ca.crt\",\"client_cert\":\"/Users/nick/GoLandProjects/bloxapp_prysm/credentials/localhost/clients/1/client.crt\",\"client_key\":\"/Users/nick/GoLandProjects/bloxapp_prysm/credentials/localhost/clients/1/client.key\"}}",
-	)
-	err := client.Run(params)
-	if err != nil {
-		println(err)
-	}
+	//params := client.New(
+	//	"100.65.90.215:4000",
+	//	"remote",
+	//	"{\"location\":\"localhost:8088\",\"accounts\":[\"NValidator/Account.*\"],\"certificates\":{\"ca_cert\":\"/Users/nick/GoLandProjects/bloxapp_prysm/credentials/localhost/ca.crt\",\"client_cert\":\"/Users/nick/GoLandProjects/bloxapp_prysm/credentials/localhost/clients/1/client.crt\",\"client_key\":\"/Users/nick/GoLandProjects/bloxapp_prysm/credentials/localhost/clients/1/client.key\"}}",
+	//)
+	//err := client.Run(params)
+	//if err != nil {
+	//	println(err)
+	//}
+	client.Go(loc, ca, cCa, cK, acc)
 }
