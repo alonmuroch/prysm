@@ -62,6 +62,36 @@ var (
 		Usage: "The options for the keymanger, either a JSON string or path to same",
 		Value: "",
 	}
+	// KeyManagerLocation specifies the key manager location.
+	KeyManagerLocation = &cli.StringFlag{
+		Name:  "keymanager-location",
+		Usage: "remote wallet location",
+		Value: "",
+	}
+	// KeyManagerCACert specifies the key manager certificate.
+	KeyManagerCACert = &cli.StringFlag{
+		Name:  "keymanager-ca-cert",
+		Usage: "certificate for the remote wallet connection",
+		Value: "",
+	}
+	// KeyManagerClientCert specifies the key manager certificate.
+	KeyManagerClientCert = &cli.StringFlag{
+		Name:  "keymanager-client-cert",
+		Usage: "client certificate for walletd connection",
+		Value: "",
+	}
+	// KeyManagerClientKey specifies the key manager private key.
+	KeyManagerClientKey = &cli.StringFlag{
+		Name:  "keymanager-client-key",
+		Usage: "client key for walletd connection",
+		Value: "",
+	}
+	// KeyManagerAccountPath specifies the key manager wallet path.
+	KeyManagerAccountPath = &cli.StringFlag{
+		Name:  "keymanager-account-path",
+		Usage: "remote wallet account path",
+		Value: "",
+	}
 	// KeystorePathFlag defines the location of the keystore directory for a validator's account.
 	KeystorePathFlag = &cli.StringFlag{
 		Name:  "keystore-path",

@@ -2,8 +2,7 @@ package main
 
 import "github.com/prysmaticlabs/prysm/blox/client"
 
-var loc = "localhost:8088"
-var ca = `-----BEGIN CERTIFICATE-----
+var caCert = `-----BEGIN CERTIFICATE-----
 MIIFBDCCAuygAwIBAgIBATANBgkqhkiG9w0BAQsFADAiMSAwHgYDVQQDExdXYWxs
 ZXQgZGFlbW9uIGF1dGhvcml0eTAeFw0yMDA0MjYxMDQ2MjlaFw0yMzA0MjYxMDQ2
 MTVaMCIxIDAeBgNVBAMTF1dhbGxldCBkYWVtb24gYXV0aG9yaXR5MIICIjANBgkq
@@ -32,7 +31,7 @@ GD2NEFWSospRgmjoxOJp7Y+s0Cxgk2AkTeShlfOSslzJ4O6bjmo7iwglD4P55uOU
 THSP5m2GSEk0dz37tZdR3E5V8Os2l4B0H0Rl1gLG7kxFDSnA+FsIEgFYUpFs1tuY
 M2DEujAzzgmwINWOWR+vu29R28qhApjwIROI6JkO0/ve+z43tErlVA==
 -----END CERTIFICATE-----`
-var cCa = `-----BEGIN CERTIFICATE-----
+var clientCert = `-----BEGIN CERTIFICATE-----
 MIIEMDCCAhigAwIBAgIRAMzi21rJC7ZS8zyKI8NZ3okwDQYJKoZIhvcNAQELBQAw
 IjEgMB4GA1UEAxMXV2FsbGV0IGRhZW1vbiBhdXRob3JpdHkwHhcNMjAwNDI2MTA1
 MjIwWhcNMjMwNDI2MTA0NjE0WjASMRAwDgYDVQQDEwdjbGllbnQxMIIBIjANBgkq
@@ -57,7 +56,7 @@ m6oskSZ2Ia1mj/8j24UOpcZhAfIqYEGeYSCI4auaiwR/KRmE8095TPn3pT85Y3R9
 PHdHs/rs71g3h8PoXRoUtHY9G/p4UOIS/YyKoH+edHJXpUoI4dpBiGufuCyd2BzV
 HGKDMLhA/lgnFQMYe+iK1EmhbA8=
 -----END CERTIFICATE-----`
-var cK = `-----BEGIN RSA PRIVATE KEY-----
+var clientKey = `-----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEAsHSGlAPJzczApEJMbft/ZqMqZL+CJsCI+IAoLaxqSfZZoCEI
 U9PJ4FSQU0ZLFUMmkt5h0ZLd76IFiosQVnOLr/GdAkNdjWnjfB2mfT9GZNtLKSJA
 hbkkNanowVUlKW8GW4TQGD4UP5mycQ+LbeMXjpzwCndzyZuMZXtjs45eA8IrLcxY
@@ -84,17 +83,19 @@ o89D+QKBgQC4DULvLVOm1OJfdfYCXUMqmCtp9DHuxxVWHXeQHKcPMz+3wxE/KHT9
 fNbNTrd4ReD6S1bihAc6t+pIVrrvnJBJcS6RwgZZpkgu77POWdZc056n7ADQ1Ls0
 JiJBp/PMQyJojY5JK8gKeJ/oAkADMI4nwbwIgGg8e0UNEE+2EeZy6Q==
 -----END RSA PRIVATE KEY-----`
-var acc = []string{"NValidator/Account.*"}
 
 func main() {
-	//params := client.New(
-	//	"100.65.90.215:4000",
-	//	"remote",
-	//	"{\"location\":\"localhost:8088\",\"accounts\":[\"NValidator/Account.*\"],\"certificates\":{\"ca_cert\":\"/Users/nick/GoLandProjects/bloxapp_prysm/credentials/localhost/ca.crt\",\"client_cert\":\"/Users/nick/GoLandProjects/bloxapp_prysm/credentials/localhost/clients/1/client.crt\",\"client_key\":\"/Users/nick/GoLandProjects/bloxapp_prysm/credentials/localhost/clients/1/client.key\"}}",
-	//)
-	//err := client.Run(params)
-	//if err != nil {
-	//	println(err)
-	//}
-	client.Go(loc, ca, cCa, cK, acc)
+	params := client.NewParams(
+		"100.65.90.215:4000",
+		"remote",
+		"localhost:8088",
+		caCert,
+		clientCert,
+		clientKey,
+		"NValidator/Account.1",
+	)
+	err := client.Run(params)
+	if err != nil {
+		println(err)
+	}
 }

@@ -2,39 +2,32 @@ package client
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
-	"errors"
 	"fmt"
-	pb "github.com/wealdtech/eth2-signer-api/pb/v1"
+	"github.com/prysmaticlabs/prysm/shared/bytesutil"
+	originClient "github.com/prysmaticlabs/prysm/validator/client"
+	"github.com/prysmaticlabs/prysm/validator/keymanager"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"os"
-	"time"
-
 	"gopkg.in/urfave/cli.v2"
+	"os"
+	"sync"
 
 	"github.com/prysmaticlabs/prysm/shared/cmd"
 	"github.com/prysmaticlabs/prysm/shared/debug"
 	"github.com/prysmaticlabs/prysm/shared/featureconfig"
 	"github.com/prysmaticlabs/prysm/validator/flags"
-	"github.com/prysmaticlabs/prysm/validator/node"
 )
 
 func init() {
 	appFlags = cmd.WrapFlags(append(appFlags, featureconfig.ValidatorFlags...))
 }
 
-func startNode(ctx *cli.Context) error {
-	validatorClient, err := node.NewValidatorClient(ctx)
-	if err != nil {
-		return err
-	}
-	validatorClient.Start()
-	return nil
-}
-
 var appFlags = []cli.Flag{
+	flags.KeyManagerLocation,
+	flags.KeyManagerCACert,
+	flags.KeyManagerClientCert,
+	flags.KeyManagerClientKey,
+	flags.KeyManagerAccountPath,
 	flags.BeaconRPCProviderFlag,
 	flags.CertFlag,
 	flags.GraffitiFlag,
@@ -73,24 +66,40 @@ var appFlags = []cli.Flag{
 type IParams interface {
 	BeaconRPCProvider() string
 	KeyManager() string
-	KeyManagerOpts() string
+	KeyManagerLocation() string
+	KeyManagerCACert() string
+	KeyManagerClientCert() string
+	KeyManagerClientKey() string
+	KeyManagerAccountPath() string
 }
 
 type Params struct {
-	beaconRPCProvider string
-	keyManager        string
-	keyManagerOpts    string
+	beaconRPCProvider     string
+	keyManager            string
+	keyManagerLocation    string
+	keyManagerCACert      string
+	keyManagerClientCert  string
+	keyManagerClientKey   string
+	keyManagerAccountPath string
 }
 
-func New(
+func NewParams(
 	beaconRPCProvider string,
 	keyManager string,
-	keyManagerOpts string,
+	keyManagerLocation string,
+	keyManagerCACert string,
+	keyManagerClientCert string,
+	keyManagerClientKey string,
+	keyManagerAccountPath string,
 ) *Params {
 	return &Params{
 		beaconRPCProvider,
 		keyManager,
-		keyManagerOpts,
+		keyManagerLocation,
+		keyManagerCACert,
+		keyManagerClientCert,
+		keyManagerClientKey,
+		keyManagerAccountPath,
 	}
 }
 
@@ -100,98 +109,125 @@ func (p *Params) BeaconRPCProvider() string {
 func (p *Params) KeyManager() string {
 	return p.keyManager
 }
-func (p *Params) KeyManagerOpts() string {
-	return p.keyManagerOpts
+func (p *Params) KeyManagerLocation() string {
+	return p.keyManagerLocation
+}
+func (p *Params) KeyManagerCACert() string {
+	return p.keyManagerCACert
+}
+func (p *Params) KeyManagerClientCert() string {
+	return p.keyManagerClientCert
+}
+func (p *Params) KeyManagerClientKey() string {
+	return p.keyManagerClientKey
+}
+func (p *Params) KeyManagerAccountPath() string {
+	return p.keyManagerAccountPath
+}
+
+type validatorRole int8
+
+const (
+	roleUnknown = iota
+	roleAttester
+	roleProposer
+	roleAggregator
+)
+
+func run(ctx context.Context, v originClient.Validator, ticker *SlotTicker) error {
+	slot := <-ticker.NextSlot()
+
+	deadline := v.SlotDeadline(slot)
+	slotCtx, cancel := context.WithDeadline(ctx, deadline)
+
+	// this is necessary to set genesis time and the slot timer
+	if err := v.UpdateDuties(ctx, slot); err != nil {
+		cancel()
+		log.WithError(err).Error("Update duties failed")
+		return nil
+	}
+
+	var wg sync.WaitGroup
+
+	allRoles, err := v.RolesAt(ctx, slot)
+	if err != nil {
+		log.WithError(err).Error("Could not get validator roles")
+		return nil
+	}
+	for id, roles := range allRoles {
+		wg.Add(len(roles))
+		for _, role := range roles {
+			go func(role validatorRole, id [48]byte) {
+				defer wg.Done()
+				switch role {
+				case roleAttester:
+					v.SubmitAttestation(slotCtx, slot, id)
+				case roleProposer:
+					v.ProposeBlock(slotCtx, slot, id)
+				case roleAggregator:
+					v.SubmitAggregateAndProof(slotCtx, slot, id)
+				case roleUnknown:
+					log.WithField("pubKey", fmt.Sprintf("%#x", bytesutil.Trunc(id[:]))).Trace("No active roles, doing nothing")
+				default:
+					log.Warnf("Unhandled role %v", role)
+				}
+			}(validatorRole(role), id)
+		}
+	}
+	// Wait for all processes to complete, then report span complete.
+	go func() {
+		wg.Wait()
+	}()
+
+	return nil
+}
+
+var grpcConnection *grpc.ClientConn
+var slotTicker *SlotTicker
+
+func startValidator(ctx *cli.Context) error {
+	l := ctx.String(flags.KeyManagerLocation.Name)
+	caC := ctx.String(flags.KeyManagerCACert.Name)
+	cC := ctx.String(flags.KeyManagerClientCert.Name)
+	cK := ctx.String(flags.KeyManagerClientKey.Name)
+	aP := ctx.String(flags.KeyManagerAccountPath.Name)
+	km, err := keymanager.NewRemoteWalletd(l, caC, cC, cK, aP)
+	if err != nil {
+		return err
+	}
+	if grpcConnection == nil {
+		conn, err := NewGRPCConnection(ctx)
+		if err != nil {
+			return err
+		}
+		grpcConnection = conn
+	}
+	if slotTicker == nil {
+		ticker := NewSlotTicker(grpcConnection)
+		err = ticker.Start(ctx)
+		if err != nil {
+			return err
+		}
+		slotTicker = ticker
+	}
+	validator := NewValidator(km, grpcConnection)
+	return run(ctx, validator, slotTicker)
 }
 
 func Run(params IParams) error {
 	flags.BeaconRPCProviderFlag.Value = params.BeaconRPCProvider()
 	flags.KeyManager.Value = params.KeyManager()
-	flags.KeyManagerOpts.Value = params.KeyManagerOpts()
+	flags.KeyManagerLocation.Value = params.KeyManagerLocation()
+	flags.KeyManagerCACert.Value = params.KeyManagerCACert()
+	flags.KeyManagerClientCert.Value = params.KeyManagerClientCert()
+	flags.KeyManagerClientKey.Value = params.KeyManagerClientKey()
+	flags.KeyManagerAccountPath.Value = params.KeyManagerAccountPath()
 	app := &cli.App{}
-	app.Action = startNode
+	app.Action = startValidator
 	app.Flags = appFlags
 	err := app.Run(os.Args)
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func Go(location, serverCA, certPEMBlock, keyPEMBlock string, accounts []string) {
-	start := time.Now()
-
-	err := setup(location, serverCA, certPEMBlock, keyPEMBlock)
-	if err != nil {
-		return
-	}
-
-	names := listAccounts(accounts)
-
-	fmt.Printf("listAccounts %d ms: %v", int64(time.Since(start)/time.Millisecond), names)
-}
-
-var connection *grpc.ClientConn
-
-func setup(location, serverCA, certPEMBlock, keyPEMBlock string) error {
-	conn, err := connect(location, []byte(serverCA), []byte(certPEMBlock), []byte(keyPEMBlock))
-	if err != nil {
-		//load client crt failed
-		return err
-	}
-
-	connection = conn
-	return nil
-}
-
-const (
-	// maxMessageSize is the largest message that can be received over GRPC.  Set to 8MB, which handles ~128K keys.
-	maxMessageSize = 8 * 1024 * 1024
-)
-
-func connect(location string, serverCA, certPEMBlock, keyPEMBlock []byte) (*grpc.ClientConn, error) {
-	cp := x509.NewCertPool()
-	if !cp.AppendCertsFromPEM(serverCA) {
-		//failed to add server's CA certificate to pool
-		return &grpc.ClientConn{}, errors.New("append cert from pem failed")
-	}
-	clientPair, err := tls.X509KeyPair(certPEMBlock, keyPEMBlock)
-	if err != nil {
-		//failed to add client's Key Pair certificate to pool
-		return &grpc.ClientConn{}, err
-	}
-	tlsCfg := &tls.Config{
-		Certificates: []tls.Certificate{clientPair},
-		RootCAs:      cp,
-	}
-	clientCreds := credentials.NewTLS(tlsCfg)
-	grpcOpts := []grpc.DialOption{
-		// Require TLS with client certificate.
-		grpc.WithTransportCredentials(clientCreds),
-		// Receive large messages without erroring.
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMessageSize)),
-	}
-	conn, err := grpc.Dial(location, grpcOpts...)
-	if err != nil {
-		//failed to connect
-		return &grpc.ClientConn{}, err
-	}
-	return conn, nil
-}
-
-func listAccounts(accountsPatterns []string) []string {
-	listerClient := pb.NewListerClient(connection)
-	listAccountsReq := &pb.ListAccountsRequest{
-		Paths: accountsPatterns,
-	}
-	resp, err := listerClient.ListAccounts(context.Background(), listAccountsReq)
-	if err != nil {
-		println(err)
-	}
-
-	var names []string
-	for i := 0; i < len(resp.Accounts); i++ {
-		names = append(names, resp.Accounts[i].Name)
-	}
-	return names
 }

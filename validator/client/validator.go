@@ -62,6 +62,24 @@ type validator struct {
 	aggregatedSlotCommitteeIDCacheLock sync.Mutex
 }
 
+func NewValidatorImplementation(
+	validatorClient ethpb.BeaconNodeValidatorClient,
+	beaconClient ethpb.BeaconChainClient,
+	node ethpb.NodeClient,
+	keyManager keymanager.KeyManager,
+) validator {
+
+	return validator{
+		genesisTime:     0,
+		ticker:          nil,
+		duties:          nil,
+		validatorClient: validatorClient,
+		beaconClient:    beaconClient,
+		node:            node,
+		keyManager:      keyManager,
+	}
+}
+
 var validatorStatusesGaugeVec = promauto.NewGaugeVec(
 	prometheus.GaugeOpts{
 		Namespace: "validator",
