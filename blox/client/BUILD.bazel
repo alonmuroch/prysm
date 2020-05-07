@@ -6,7 +6,6 @@ go_library(
         "runner.go",
         "validator.go",
         "grpc.go",
-        "slotticker.go"
     ],
     importpath = "github.com/prysmaticlabs/prysm/blox/client",
     visibility = [

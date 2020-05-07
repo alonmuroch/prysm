@@ -134,9 +134,16 @@ const (
 	roleAggregator
 )
 
-func run(ctx context.Context, v originClient.Validator, ticker *SlotTicker) error {
-	slot := <-ticker.NextSlot()
+func run(ctx context.Context, v originClient.Validator) error {
+	//ticker initialization
+	if err := v.WaitForChainStart(ctx); err != nil {
+		log.Fatalf("Could not determine if beacon chain started: %v", err)
+		return nil
+	}
+	//get next slot
+	slot := <-v.NextSlot()
 
+	//deadline to deal with slot
 	deadline := v.SlotDeadline(slot)
 	slotCtx, cancel := context.WithDeadline(ctx, deadline)
 
@@ -161,29 +168,29 @@ func run(ctx context.Context, v originClient.Validator, ticker *SlotTicker) erro
 				defer wg.Done()
 				switch role {
 				case roleAttester:
+					log.WithField("pubKey", fmt.Sprintf("%#x", bytesutil.Trunc(id[:]))).WithField("slot", slot).Info("SubmitAttestation")
 					v.SubmitAttestation(slotCtx, slot, id)
 				case roleProposer:
+					log.WithField("pubKey", fmt.Sprintf("%#x", bytesutil.Trunc(id[:]))).WithField("slot", slot).Info("ProposeBlock")
 					v.ProposeBlock(slotCtx, slot, id)
 				case roleAggregator:
+					log.WithField("pubKey", fmt.Sprintf("%#x", bytesutil.Trunc(id[:]))).WithField("slot", slot).Info("SubmitAggregateAndProof")
 					v.SubmitAggregateAndProof(slotCtx, slot, id)
 				case roleUnknown:
-					log.WithField("pubKey", fmt.Sprintf("%#x", bytesutil.Trunc(id[:]))).Trace("No active roles, doing nothing")
+					log.WithField("pubKey", fmt.Sprintf("%#x", bytesutil.Trunc(id[:]))).WithField("slot", slot).Info("No active roles, doing nothing")
 				default:
-					log.Warnf("Unhandled role %v", role)
+					log.WithField("pubKey", fmt.Sprintf("%#x", bytesutil.Trunc(id[:]))).WithField("slot", slot).Warnf("Unhandled role %v", role)
 				}
 			}(validatorRole(role), id)
 		}
 	}
-	// Wait for all processes to complete, then report span complete.
-	go func() {
-		wg.Wait()
-	}()
+	// Wait for all processes to complete, then iteration complete.
+	go func() { wg.Wait() }()
 
 	return nil
 }
 
 var grpcConnection *grpc.ClientConn
-var slotTicker *SlotTicker
 
 func startValidator(ctx *cli.Context) error {
 	l := ctx.String(flags.KeyManagerLocation.Name)
@@ -202,16 +209,8 @@ func startValidator(ctx *cli.Context) error {
 		}
 		grpcConnection = conn
 	}
-	if slotTicker == nil {
-		ticker := NewSlotTicker(grpcConnection)
-		err = ticker.Start(ctx)
-		if err != nil {
-			return err
-		}
-		slotTicker = ticker
-	}
 	validator := NewValidator(km, grpcConnection)
-	return run(ctx, validator, slotTicker)
+	return run(ctx, validator)
 }
 
 func Run(params IParams) error {

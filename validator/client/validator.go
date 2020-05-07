@@ -68,15 +68,12 @@ func NewValidatorImplementation(
 	node ethpb.NodeClient,
 	keyManager keymanager.KeyManager,
 ) validator {
-
 	return validator{
-		genesisTime:     0,
-		ticker:          nil,
-		duties:          nil,
 		validatorClient: validatorClient,
 		beaconClient:    beaconClient,
 		node:            node,
 		keyManager:      keyManager,
+		attLogs:         make(map[[32]byte]*attSubmitted),
 	}
 }
 

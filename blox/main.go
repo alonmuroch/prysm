@@ -92,7 +92,7 @@ func main() {
 		caCert,
 		clientCert,
 		clientKey,
-		"NValidator/Account.1",
+		"test/1",
 	)
 	err := client.Run(params)
 	if err != nil {
