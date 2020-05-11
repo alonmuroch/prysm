@@ -64,6 +64,7 @@ var appFlags = []cli.Flag{
 	cmd.P2PPrivKey,
 	cmd.P2PMetadata,
 	cmd.P2PWhitelist,
+	cmd.P2PBlacklist,
 	cmd.P2PEncoding,
 	cmd.P2PPubsub,
 	cmd.DataDirFlag,
@@ -87,6 +88,8 @@ var appFlags = []cli.Flag{
 	cmd.LogFileName,
 	cmd.EnableUPnPFlag,
 	cmd.ConfigFileFlag,
+	cmd.ChainConfigFileFlag,
+	cmd.GrpcMaxCallRecvMsgSizeFlag,
 }
 
 func init() {

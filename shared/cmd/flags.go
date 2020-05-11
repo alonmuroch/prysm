@@ -125,6 +125,13 @@ var (
 			"would whitelist connections to peers on your local network only. The default " +
 			"is to accept all connections.",
 	}
+	// P2PBlacklist defines a list of CIDR subnets to disallow connections from them.
+	P2PBlacklist = &cli.StringSliceFlag{
+		Name: "p2p-blacklist",
+		Usage: "The CIDR subnets for blacklisting peer connections. Example: 192.168.0.0/16 " +
+			"would blacklist connections from peers on your local network only. The default " +
+			"is to accept all connections.",
+	}
 	// P2PEncoding defines the encoding format for p2p messages.
 	P2PEncoding = &cli.StringFlag{
 		Name:  "p2p-encoding",
@@ -173,5 +180,16 @@ var (
 	ConfigFileFlag = &cli.StringFlag{
 		Name:  "config-file",
 		Usage: "The filepath to a yaml file with flag values",
+	}
+	// ChainConfigFileFlag specifies the filepath to load flag values.
+	ChainConfigFileFlag = &cli.StringFlag{
+		Name:  "chain-config-file",
+		Usage: "The path to a YAML file with chain config values",
+	}
+	// GrpcMaxCallRecvMsgSizeFlag defines the max call message size for GRPC
+	GrpcMaxCallRecvMsgSizeFlag = &cli.IntFlag{
+		Name:  "grpc-max-msg-size",
+		Usage: "Integer to define max recieve message call size (default: 4194304 (for 40MB))",
+		Value: 1 << 22,
 	}
 )

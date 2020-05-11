@@ -7,6 +7,8 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/prysmaticlabs/prysm/beacon-chain/state/stateutil"
+
 	"github.com/pkg/errors"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
 	"github.com/prysmaticlabs/go-ssz"
@@ -116,21 +118,26 @@ func (vs *Server) GetBlock(ctx context.Context, req *ethpb.BlockRequest) (*ethpb
 // ProposeBlock is called by a proposer during its assigned slot to create a block in an attempt
 // to get it processed by the beacon node as the canonical head.
 func (vs *Server) ProposeBlock(ctx context.Context, blk *ethpb.SignedBeaconBlock) (*ethpb.ProposeResponse, error) {
-	root, err := ssz.HashTreeRoot(blk.Block)
+	root, err := stateutil.BlockRoot(blk.Block)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not tree hash block: %v", err)
 	}
-	log.WithField("blockRoot", fmt.Sprintf("%#x", bytesutil.Trunc(root[:]))).Debugf(
-		"Block proposal received via RPC")
-	vs.BlockNotifier.BlockFeed().Send(&feed.Event{
-		Type: blockfeed.ReceivedBlock,
-		Data: &blockfeed.ReceivedBlockData{SignedBlock: blk},
-	})
-	if err := vs.BlockReceiver.ReceiveBlock(ctx, blk); err != nil {
+
+	// Do not block proposal critical path with debug logging or block feed updates.
+	defer func() {
+		log.WithField("blockRoot", fmt.Sprintf("%#x", bytesutil.Trunc(root[:]))).Debugf(
+			"Block proposal received via RPC")
+		vs.BlockNotifier.BlockFeed().Send(&feed.Event{
+			Type: blockfeed.ReceivedBlock,
+			Data: &blockfeed.ReceivedBlockData{SignedBlock: blk},
+		})
+	}()
+
+	if err := vs.BlockReceiver.ReceiveBlock(ctx, blk, root); err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not process beacon block: %v", err)
 	}
 
-	if err := vs.deleteAttsInPool(blk.Block.Body.Attestations); err != nil {
+	if err := vs.deleteAttsInPool(ctx, blk.Block.Body.Attestations); err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not delete attestations in pool: %v", err)
 	}
 
@@ -283,6 +290,12 @@ func (vs *Server) deposits(ctx context.Context, currentVote *ethpb.Eth1Data) ([]
 		return []*ethpb.Deposit{}, nil
 	}
 
+	// If there are no pending deposits, exit early.
+	allPendingContainers := vs.PendingDepositsFetcher.PendingContainers(ctx, latestEth1DataHeight)
+	if len(allPendingContainers) == 0 {
+		return []*ethpb.Deposit{}, nil
+	}
+
 	upToEth1DataDeposits := vs.DepositFetcher.AllDeposits(ctx, latestEth1DataHeight)
 	depositData := [][]byte{}
 	for _, dep := range upToEth1DataDeposits {
@@ -297,9 +310,7 @@ func (vs *Server) deposits(ctx context.Context, currentVote *ethpb.Eth1Data) ([]
 	if err != nil {
 		return nil, errors.Wrap(err, "could not generate historical deposit trie from deposits")
 	}
-
-	allPendingContainers := vs.PendingDepositsFetcher.PendingContainers(ctx, latestEth1DataHeight)
-
+	
 	// Deposits need to be received in order of merkle index root, so this has to make sure
 	// deposits are sorted from lowest to highest.
 	var pendingDeps []*dbpb.DepositContainer
@@ -402,7 +413,7 @@ func (vs *Server) filterAttestationsForBlockInclusion(ctx context.Context, state
 		validAtts = append(validAtts, att)
 	}
 
-	if err := vs.deleteAttsInPool(inValidAtts); err != nil {
+	if err := vs.deleteAttsInPool(ctx, inValidAtts); err != nil {
 		return nil, err
 	}
 
@@ -411,8 +422,14 @@ func (vs *Server) filterAttestationsForBlockInclusion(ctx context.Context, state
 
 // The input attestations are processed and seen by the node, this deletes them from pool
 // so proposers don't include them in a block for the future.
-func (vs *Server) deleteAttsInPool(atts []*ethpb.Attestation) error {
+func (vs *Server) deleteAttsInPool(ctx context.Context, atts []*ethpb.Attestation) error {
+	ctx, span := trace.StartSpan(ctx, "ProposerServer.deleteAttsInPool")
+	defer span.End()
+
 	for _, att := range atts {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 		if helpers.IsAggregated(att) {
 			if err := vs.AttPool.DeleteAggregatedAttestation(att); err != nil {
 				return err

@@ -61,6 +61,8 @@ var appHelpFlagGroups = []flagGroup{
 			cmd.ForceClearDB,
 			cmd.ClearDB,
 			cmd.ConfigFileFlag,
+			cmd.ChainConfigFileFlag,
+			cmd.GrpcMaxCallRecvMsgSizeFlag,
 		},
 	},
 	{
@@ -107,6 +109,7 @@ var appHelpFlagGroups = []flagGroup{
 			cmd.P2PPrivKey,
 			cmd.P2PMetadata,
 			cmd.P2PWhitelist,
+			cmd.P2PBlacklist,
 			cmd.StaticPeers,
 			cmd.EnableUPnPFlag,
 			cmd.P2PEncoding,

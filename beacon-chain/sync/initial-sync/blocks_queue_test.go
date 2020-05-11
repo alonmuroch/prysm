@@ -3,18 +3,17 @@ package initialsync
 import (
 	"context"
 	"fmt"
+	"github.com/prysmaticlabs/prysm/beacon-chain/state/stateutil"
 	"testing"
 
 	eth "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
-	dbtest "github.com/prysmaticlabs/prysm/beacon-chain/db/testing"
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/featureconfig"
 	"github.com/prysmaticlabs/prysm/shared/sliceutil"
 )
 
 func TestBlocksQueueInitStartStop(t *testing.T) {
-	mc, p2p, beaconDB := initializeTestServices(t, []uint64{}, []*peerData{})
-	defer dbtest.TeardownDB(t, beaconDB)
+	mc, p2p, _ := initializeTestServices(t, []uint64{}, []*peerData{})
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -255,7 +254,6 @@ func TestBlocksQueueLoop(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mc, p2p, beaconDB := initializeTestServices(t, tt.expectedBlockSlots, tt.peers)
-			defer dbtest.TeardownDB(t, beaconDB)
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -277,11 +275,19 @@ func TestBlocksQueueLoop(t *testing.T) {
 					return fmt.Errorf("beacon node doesn't have a block in db with root %#x", block.Block.ParentRoot)
 				}
 				if featureconfig.Get().InitSyncNoVerify {
-					if err := mc.ReceiveBlockNoVerify(ctx, block); err != nil {
+					root, err := stateutil.BlockRoot(block.Block)
+					if err != nil {
+						return err
+					}
+					if err := mc.ReceiveBlockNoVerify(ctx, block, root); err != nil {
 						return err
 					}
 				} else {
-					if err := mc.ReceiveBlockNoPubsubForkchoice(ctx, block); err != nil {
+					root, err := stateutil.BlockRoot(block.Block)
+					if err != nil {
+						return err
+					}
+					if err := mc.ReceiveBlockNoPubsubForkchoice(ctx, block, root); err != nil {
 						return err
 					}
 				}

@@ -11,6 +11,7 @@ import (
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/helpers"
 	"github.com/prysmaticlabs/prysm/beacon-chain/db/filters"
 	stateTrie "github.com/prysmaticlabs/prysm/beacon-chain/state"
+	"github.com/prysmaticlabs/prysm/beacon-chain/state/stateutil"
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/featureconfig"
 	"github.com/prysmaticlabs/prysm/shared/params"
@@ -40,6 +41,18 @@ func (s *Service) getBlockPreState(ctx context.Context, b *ethpb.BeaconBlock) (*
 	preState, err := s.verifyBlkPreState(ctx, b)
 	if err != nil {
 		return nil, err
+	}
+
+	//  For new state management, this ensures the state does not get mutated since initial syncing
+	//  uses verifyBlkPreState.
+	if featureconfig.Get().NewStateMgmt {
+		preState, err = s.stateGen.StateByRoot(ctx, bytesutil.ToBytes32(b.ParentRoot))
+		if err != nil {
+			return nil, errors.Wrapf(err, "could not get pre state for slot %d", b.Slot)
+		}
+		if preState == nil {
+			return nil, errors.Wrapf(err, "nil pre state for slot %d", b.Slot)
+		}
 	}
 
 	// Verify block slot time is not from the feature.
@@ -79,13 +92,14 @@ func (s *Service) verifyBlkPreState(ctx context.Context, b *ethpb.BeaconBlock) (
 			}
 			s.clearInitSyncBlocks()
 		}
-		preState, err := s.stateGen.StateByRoot(ctx, parentRoot)
+		preState, err := s.stateGen.StateByRootInitialSync(ctx, parentRoot)
 		if err != nil {
 			return nil, errors.Wrapf(err, "could not get pre state for slot %d", b.Slot)
 		}
 		if preState == nil {
 			return nil, errors.Wrapf(err, "nil pre state for slot %d", b.Slot)
 		}
+
 		return preState, nil // No copy needed from newly hydrated state gen object.
 	}
 
@@ -348,7 +362,7 @@ func (s *Service) filterBlockRoots(ctx context.Context, roots [][32]byte) ([][32
 	if err != nil {
 		return nil, err
 	}
-	hRoot, err := ssz.HashTreeRoot(h.Block)
+	hRoot, err := stateutil.BlockRoot(h.Block)
 	if err != nil {
 		return nil, err
 	}

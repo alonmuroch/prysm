@@ -8,6 +8,7 @@ import (
 	"github.com/golang/mock/gomock"
 	lru "github.com/hashicorp/golang-lru"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
+	slashpb "github.com/prysmaticlabs/prysm/proto/slashing"
 	"github.com/prysmaticlabs/prysm/shared/featureconfig"
 	"github.com/prysmaticlabs/prysm/shared/params"
 	"github.com/prysmaticlabs/prysm/shared/testutil"
@@ -31,14 +32,22 @@ func setup(t *testing.T) (*validator, *mocks, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	cleanMap := make(map[uint64]uint64)
+	cleanMap[0] = params.BeaconConfig().FarFutureEpoch
+	clean := &slashpb.AttestationHistory{
+		TargetToSource: cleanMap,
+	}
+	attHistoryByPubKey := make(map[[48]byte]*slashpb.AttestationHistory)
+	attHistoryByPubKey[validatorPubKey] = clean
 
 	validator := &validator{
-		db:              valDB,
-		validatorClient: m.validatorClient,
-		keyManager:      testKeyManager,
-		graffiti:        []byte{},
-		attLogs:         make(map[[32]byte]*attSubmitted),
+		db:                             valDB,
+		validatorClient:                m.validatorClient,
+		keyManager:                     testKeyManager,
+		graffiti:                       []byte{},
+		attLogs:                        make(map[[32]byte]*attSubmitted),
 		aggregatedSlotCommitteeIDCache: aggregatedSlotCommitteeIDCache,
+		attesterHistoryByPubKey:        attHistoryByPubKey,
 	}
 
 	return validator, m, ctrl.Finish
@@ -124,7 +133,6 @@ func TestProposeBlock_BlocksDoubleProposal(t *testing.T) {
 	hook := logTest.NewGlobal()
 	validator, m, finish := setup(t)
 	defer finish()
-	defer db.TeardownDB(t, validator.db)
 
 	m.validatorClient.EXPECT().DomainData(
 		gomock.Any(), // ctx
@@ -146,10 +154,11 @@ func TestProposeBlock_BlocksDoubleProposal(t *testing.T) {
 		gomock.AssignableToTypeOf(&ethpb.SignedBeaconBlock{}),
 	).Return(&ethpb.ProposeResponse{}, nil /*error*/)
 
-	validator.ProposeBlock(context.Background(), params.BeaconConfig().SlotsPerEpoch*5+2, validatorPubKey)
+	slot := params.BeaconConfig().SlotsPerEpoch*5 + 2
+	validator.ProposeBlock(context.Background(), slot, validatorPubKey)
 	testutil.AssertLogsDoNotContain(t, hook, "Tried to sign a double proposal")
 
-	validator.ProposeBlock(context.Background(), params.BeaconConfig().SlotsPerEpoch*5+2, validatorPubKey)
+	validator.ProposeBlock(context.Background(), slot, validatorPubKey)
 	testutil.AssertLogsContain(t, hook, "Tried to sign a double proposal")
 }
 
@@ -162,7 +171,6 @@ func TestProposeBlock_BlocksDoubleProposal_After54KEpochs(t *testing.T) {
 	hook := logTest.NewGlobal()
 	validator, m, finish := setup(t)
 	defer finish()
-	defer db.TeardownDB(t, validator.db)
 
 	m.validatorClient.EXPECT().DomainData(
 		gomock.Any(), // ctx
@@ -201,7 +209,6 @@ func TestProposeBlock_AllowsPastProposals(t *testing.T) {
 	hook := logTest.NewGlobal()
 	validator, m, finish := setup(t)
 	defer finish()
-	defer db.TeardownDB(t, validator.db)
 
 	m.validatorClient.EXPECT().DomainData(
 		gomock.Any(), // ctx
@@ -241,7 +248,6 @@ func TestProposeBlock_AllowsSameEpoch(t *testing.T) {
 	hook := logTest.NewGlobal()
 	validator, m, finish := setup(t)
 	defer finish()
-	defer db.TeardownDB(t, validator.db)
 
 	m.validatorClient.EXPECT().DomainData(
 		gomock.Any(), // ctx
