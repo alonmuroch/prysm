@@ -9,7 +9,7 @@ go_library(
     importpath = "github.com/prysmaticlabs/prysm/validator/flags",
     visibility = [
         "//blox:__subpackages__",
-        "//validator:__subpackages__"
+        "//validator:__subpackages__",
     ],
     deps = ["@in_gopkg_urfave_cli_v2//:go_default_library"],
 )
