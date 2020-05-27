@@ -188,6 +188,7 @@ func run(ctx context.Context, v originClient.Validator) error {
 	// Wait for all processes to complete, then iteration complete.
 	go func() { wg.Wait() }()
 
+
 	return nil
 }
 
@@ -199,10 +200,12 @@ func startValidator(ctx *cli.Context) error {
 	cC := ctx.String(flags.KeyManagerClientCert.Name)
 	cK := ctx.String(flags.KeyManagerClientKey.Name)
 	aP := ctx.String(flags.KeyManagerAccountPath.Name)
-	km, err := keymanager.NewRemoteWalletd(l, caC, cC, cK, aP)
+	km,kmConn, err := keymanager.NewRemoteWalletd(l, caC, cC, cK, aP)
+
 	if err != nil {
 		return err
 	}
+
 	if grpcConnection == nil {
 		conn, err := NewGRPCConnection(ctx)
 		if err != nil {
@@ -210,8 +213,14 @@ func startValidator(ctx *cli.Context) error {
 		}
 		grpcConnection = conn
 	}
+
 	validator := NewValidator(km, grpcConnection)
-	return run(ctx, validator)
+	err = run(ctx, validator)
+	if err != nil {
+		return err
+	}
+	err = kmConn.Close()
+	return err
 }
 
 func Run(params IParams) error {

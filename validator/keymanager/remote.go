@@ -146,16 +146,16 @@ func NewRemoteWallet(input string) (KeyManager, string, error) {
 }
 
 // NewRemoteWalletd creates a key manager populated with the keys from walletd.
-func NewRemoteWalletd(location, caCert, clientCert, clientKey, accountPath string) (KeyManager, error) {
+func NewRemoteWalletd(location, caCert, clientCert, clientKey, accountPath string) (KeyManager, *grpc.ClientConn, error) {
 	cp := x509.NewCertPool()
 	if !cp.AppendCertsFromPEM([]byte(caCert)) {
 		//failed to add server's CA certificate to pool
-		return nil, errors.New("append cert from pem failed")
+		return nil, nil, errors.New("append cert from pem failed")
 	}
 	clientPair, err := tls.X509KeyPair([]byte(clientCert), []byte(clientKey))
 	if err != nil {
 		//failed to add client's Key Pair certificate to pool
-		return nil, err
+		return nil, nil, err
 	}
 	tlsCfg := &tls.Config{
 		Certificates: []tls.Certificate{clientPair},
@@ -171,7 +171,7 @@ func NewRemoteWalletd(location, caCert, clientCert, clientKey, accountPath strin
 	conn, err := grpc.Dial(location, grpcOpts...)
 
 	if err != nil {
-		return nil, errors.New("failed to connect to remote wallet")
+		return nil, nil, errors.New("failed to connect to remote wallet")
 	}
 
 	km := &Remote{
@@ -181,10 +181,10 @@ func NewRemoteWalletd(location, caCert, clientCert, clientKey, accountPath strin
 
 	err = km.RefreshValidatingKeys()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to fetch accounts from remote wallet")
+		return nil,nil, errors.Wrap(err, "failed to fetch accounts from remote wallet")
 	}
 
-	return km, nil
+	return km, conn, nil
 }
 
 // FetchValidatingKeys fetches the list of public keys that should be used to validate with.
