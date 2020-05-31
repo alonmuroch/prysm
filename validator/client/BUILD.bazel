@@ -18,6 +18,7 @@ go_library(
     visibility = [
         "//blox:__subpackages__",
         "//validator:__subpackages__",
+        "//visibility:public",
     ],
     deps = [
         "//beacon-chain/core/helpers:go_default_library",
