@@ -70,13 +70,22 @@ func NewValidatorImplementation(
 	beaconClient ethpb.BeaconChainClient,
 	node ethpb.NodeClient,
 	keyManager keymanager.KeyManager,
+
 ) validator {
+	aggregatedSlotCommitteeIDCache, err := lru.New(int(params.BeaconConfig().MaxCommitteesPerSlot))
+	if err != nil {
+		log.Error("Failed aggregatedSlotCommitteeIDCache")
+		return validator{}
+	}
+
 	return validator{
 		validatorClient: validatorClient,
 		beaconClient:    beaconClient,
 		node:            node,
 		keyManager:      keyManager,
 		attLogs:         make(map[[32]byte]*attSubmitted),
+		aggregatedSlotCommitteeIDCache:aggregatedSlotCommitteeIDCache,
+
 	}
 }
 
