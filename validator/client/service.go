@@ -56,6 +56,7 @@ type ValidatorService struct {
 	grpcRetryDelay       time.Duration
 	grpcHeaders          []string
 	protector            slashingprotection.Protector
+	ssvMode				 bool
 }
 
 // Config for the validator service.
@@ -76,6 +77,7 @@ type Config struct {
 	Protector                  slashingprotection.Protector
 	ValDB                      db.Database
 	Validator                  Validator
+	SSVMode					   bool
 }
 
 // NewValidatorService creates a new validator service for the service
@@ -101,6 +103,7 @@ func NewValidatorService(ctx context.Context, cfg *Config) (*ValidatorService, e
 		protector:            cfg.Protector,
 		validator:            cfg.Validator,
 		db:                   cfg.ValDB,
+		ssvMode:			  cfg.SSVMode,
 	}, nil
 }
 
@@ -169,7 +172,12 @@ func (v *ValidatorService) Start() {
 		protector:                      v.protector,
 		voteStats:                      voteStats{startEpoch: ^uint64(0)},
 	}
-	go run(v.ctx, v.validator)
+
+	if v.ssvMode {
+		go runSSVClient(v.ctx, v.validator)
+	} else {
+		go runValidatorClient(v.ctx, v.validator)
+	}
 }
 
 // Stop the validator service.

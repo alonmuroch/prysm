@@ -53,7 +53,7 @@ type Validator interface {
 // 4 - Update assignments
 // 5 - Determine role at current slot
 // 6 - Perform assigned role, if any
-func run(ctx context.Context, v Validator) {
+func runValidatorClient(ctx context.Context, v Validator) {
 	defer v.Done()
 	if featureconfig.Get().SlasherProtection {
 		if err := v.SlasherReady(ctx); err != nil {

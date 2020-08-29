@@ -99,6 +99,8 @@ var appFlags = []cli.Flag{
 	debug.MemProfileRateFlag,
 	debug.CPUProfileFlag,
 	debug.TraceFlag,
+
+	flags.SSVFlag,
 }
 
 func init() {

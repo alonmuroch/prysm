@@ -177,7 +177,6 @@ func NewValidatorClient(cliCtx *cli.Context) (*ValidatorClient, error) {
 	if err := ValidatorClient.registerRPCGatewayService(cliCtx); err != nil {
 		return nil, err
 	}
-
 	return ValidatorClient, nil
 }
 
@@ -274,6 +273,7 @@ func (s *ValidatorClient) registerClientService(
 		GrpcHeadersFlag:            s.cliCtx.String(flags.GrpcHeadersFlag.Name),
 		Protector:                  protector,
 		ValDB:                      s.db,
+		SSVMode: 					s.cliCtx.Bool(flags.SSVFlag.Name),
 	})
 
 	if err != nil {
