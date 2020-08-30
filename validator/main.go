@@ -100,7 +100,7 @@ var appFlags = []cli.Flag{
 	debug.CPUProfileFlag,
 	debug.TraceFlag,
 
-	flags.SSVFlag,
+	flags.SSVModeFlag,
 }
 
 func init() {

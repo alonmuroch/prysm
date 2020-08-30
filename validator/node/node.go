@@ -273,7 +273,7 @@ func (s *ValidatorClient) registerClientService(
 		GrpcHeadersFlag:            s.cliCtx.String(flags.GrpcHeadersFlag.Name),
 		Protector:                  protector,
 		ValDB:                      s.db,
-		SSVMode: 					s.cliCtx.Bool(flags.SSVFlag.Name),
+		SSVMode: 					s.cliCtx.Bool(flags.SSVModeFlag.Name),
 	})
 
 	if err != nil {

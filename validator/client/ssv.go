@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
+	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
 	"go.opencensus.io/trace"
 	"io"
@@ -12,6 +13,11 @@ func (v *validator) NextTask(ctx context.Context) (<- chan *ethpb.SSVTask, error
 	ctx, span := trace.StartSpan(ctx, "validator.SSVTaskStream")
 	defer span.End()
 
+	pubkeys, err := v.FetchSignerPubKeys(ctx)
+	if err != nil {
+		log.Fatalf("Could not fetch keys: %s", err.Error())
+	}
+
 	stream, error := v.ssvClient.GetTaskStream(ctx, &ethpb.StreamRequest{
 		Topics:               []ethpb.StreamTopics{
 			ethpb.StreamTopics_SIGN_BLOCK,
@@ -20,7 +26,9 @@ func (v *validator) NextTask(ctx context.Context) (<- chan *ethpb.SSVTask, error
 			ethpb.StreamTopics_CHECK_ATTESTATION,
 			ethpb.StreamTopics_SIGN_AGGREGATION,
 		},
+		PublicKeys: pubkeys,
 	})
+	log.Printf("Connected to SSV node streaming")
 
 	if error != nil {
 		return nil, error
@@ -43,6 +51,19 @@ func (v *validator) NextTask(ctx context.Context) (<- chan *ethpb.SSVTask, error
 	return ret, nil
 }
 
+func (v *validator) FetchSignerPubKeys(ctx context.Context) ([][]byte,error) {
+	keys, err := v.keyManagerV2.FetchValidatingPublicKeys(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([][]byte, len(keys))
+	for i := range keys {
+		ret[i] = bytesutil.FromBytes48(keys[i])
+	}
+	return ret, nil
+}
+
 // An SSV specific function to sign an attestation as one participant of many
 func (v *validator) SignPartialAttestation(ctx context.Context, data *ethpb.AttestationData, pubKey [48]byte) {
 	sig, err := v.signAtt(ctx, pubKey, data)
@@ -58,6 +79,8 @@ func (v *validator) SignPartialAttestation(ctx context.Context, data *ethpb.Atte
 	_, err = v.validatorClient.ProposeAttestation(ctx, attestation)
 	if err != nil {
 		log.WithError(err).Error("Could not submit partial attestation to SSV node")
+	} else {
+		log.Printf("Signed and proposed partial attestation")
 	}
 }
 

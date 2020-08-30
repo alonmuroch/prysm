@@ -9,6 +9,7 @@ import (
 
 type SSVValidator interface {
 	NextTask(ctx context.Context) (<- chan *ethpb.SSVTask, error)
+	FetchSignerPubKeys(ctx context.Context) ([][]byte,error)
 	SignPartialAttestation(ctx context.Context, data *ethpb.AttestationData, pubKey [48]byte)
 	SignPartialBlock(ctx context.Context, block *ethpb.BeaconBlock, pubKey [48]byte)
 }

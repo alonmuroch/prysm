@@ -315,11 +315,17 @@ var (
 		Usage: "Sends a 32 ETH deposit for each of a user's validator accounts in their wallet",
 		Value: false,
 	}
-	// DepositAllAccountsFlag is an easy way for a user to send deposit transactions for all accounts in their wallet.
-	SSVFlag = &cli.BoolFlag{
+	// SSVModeFlag
+	SSVModeFlag = &cli.BoolFlag{
 		Name:  "ssv-mode",
 		Usage: "Sets the validator node in secret-shared-validator (SSV) mode",
 		Value: false,
+	}
+
+	SSVPubKeysFlag = &cli.StringSliceFlag{
+		Name:  "ssv-keys",
+		Usage: "Sets the eth2 validator pub keys that the SSV node operates for",
+		Value: nil,
 	}
 )
 
