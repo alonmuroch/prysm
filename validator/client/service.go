@@ -41,6 +41,7 @@ type ValidatorService struct {
 	ctx                  context.Context
 	cancel               context.CancelFunc
 	validator            Validator
+	ssvValidator		 SSVValidator
 	graffiti             []byte
 	conn                 *grpc.ClientConn
 	endpoint             string
@@ -151,7 +152,7 @@ func (v *ValidatorService) Start() {
 		return
 	}
 
-	v.validator = &validator{
+	fullValidator := &validator{
 		db:                             v.db,
 		validatorClient:                ethpb.NewBeaconNodeValidatorClient(v.conn),
 		beaconClient:                   ethpb.NewBeaconChainClient(v.conn),
@@ -173,9 +174,11 @@ func (v *ValidatorService) Start() {
 		protector:                      v.protector,
 		voteStats:                      voteStats{startEpoch: ^uint64(0)},
 	}
+	v.validator = fullValidator
+	v.ssvValidator = fullValidator
 
 	if v.ssvMode {
-		go runSSVClient(v.ctx, v.validator)
+		go runSSVClient(v.ctx, v.ssvValidator)
 	} else {
 		go runValidatorClient(v.ctx, v.validator)
 	}

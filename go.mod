@@ -130,4 +130,4 @@ replace github.com/ethereum/go-ethereum => github.com/prysmaticlabs/bazel-go-eth
 
 replace github.com/json-iterator/go => github.com/prestonvanloon/go v1.1.7-0.20190722034630-4f2e55fcf87b
 
-replace github.com/prysmaticlabs/ethereumapis => github.com/alonmuroch/ethereumapis v0.0.0-20200830082138-8b3d4e9c1663
+replace github.com/prysmaticlabs/ethereumapis => github.com/alonmuroch/ethereumapis v0.0.0-20200830100929-523ebb3b31df
