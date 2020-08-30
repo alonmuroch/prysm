@@ -156,6 +156,7 @@ func (v *ValidatorService) Start() {
 		validatorClient:                ethpb.NewBeaconNodeValidatorClient(v.conn),
 		beaconClient:                   ethpb.NewBeaconChainClient(v.conn),
 		node:                           ethpb.NewNodeClient(v.conn),
+		ssvClient:						ethpb.NewSSVClient(v.conn),
 		keyManager:                     v.keyManager,
 		keyManagerV2:                   v.keyManagerV2,
 		graffiti:                       v.graffiti,

@@ -55,6 +55,7 @@ type validator struct {
 	duties                             *ethpb.DutiesResponse
 	validatorClient                    ethpb.BeaconNodeValidatorClient
 	beaconClient                       ethpb.BeaconChainClient
+	ssvClient						   ethpb.SSVClient
 	graffiti                           []byte
 	node                               ethpb.NodeClient
 	keyManager                         keymanager.KeyManager

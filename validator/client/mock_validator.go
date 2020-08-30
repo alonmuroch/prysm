@@ -169,3 +169,8 @@ func (fv *FakeValidator) PubkeysToIndices(ctx context.Context) map[[48]byte]uint
 func (fv *FakeValidator) PubkeysToStatuses(ctx context.Context) map[[48]byte]ethpb.ValidatorStatus {
 	return fv.PubkeysToStatusesMap
 }
+
+
+func (fv *FakeValidator) NextTask(ctx context.Context)  (<- chan *ethpb.SSVTask, error) {
+	return nil, nil
+}

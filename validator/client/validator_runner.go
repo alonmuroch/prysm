@@ -41,6 +41,9 @@ type Validator interface {
 	IndicesToPubkeys(ctx context.Context) map[uint64][48]byte
 	PubkeysToIndices(ctx context.Context) map[[48]byte]uint64
 	PubkeysToStatuses(ctx context.Context) map[[48]byte]ethpb.ValidatorStatus
+
+	// SSV specific
+	NextTask(ctx context.Context) (<- chan *ethpb.SSVTask, error)
 }
 
 // Run the main validator routine. This routine exits if the context is
