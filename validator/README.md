@@ -10,3 +10,10 @@ Before you begin, check out our main [README](https://github.com/prysmaticlabs/p
 Also, read the latest sharding + casper [design spec](https://github.com/ethereum/eth2.0-specs), this design spec serves as a source of truth for the beacon chain implementation we follow at prysmatic labs.
 Check out the [FAQs](https://notes.ethereum.org/9MMuzWeFTTSg-3Tz_YeiBA?view). Refer this page on [why](https://medium.com/@djrtwo/casper-%EF%B8%8F-sharding-28a90077f121)
 we are combining sharding and casper together.
+
+### Full Validator and SSV Mode
+The validator client has 2 modes:
+1) full validator - can sign duties by itself
+2) SSV mode - part of a signing group, signs partially.
+
+to activate SSV mode run with --ssv-mode=true
