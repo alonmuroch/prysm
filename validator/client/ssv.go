@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"encoding/hex"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
@@ -28,7 +29,11 @@ func (v *validator) NextTask(ctx context.Context) (<- chan *ethpb.SSVTask, error
 		},
 		PublicKeys: pubkeys,
 	})
-	log.Printf("Connected to SSV node streaming")
+
+	for _, pubkey := range pubkeys {
+		log.Printf("Connected to SSV node streaming with pubkey: %s", hex.EncodeToString(pubkey))
+	}
+
 
 	if error != nil {
 		return nil, error

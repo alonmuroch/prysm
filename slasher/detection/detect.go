@@ -216,3 +216,4 @@ func isSurrounding(incomingAtt *ethpb.IndexedAttestation, prevAtt *ethpb.Indexed
 	return incomingAtt.Data.Source.Epoch < prevAtt.Data.Source.Epoch &&
 		incomingAtt.Data.Target.Epoch > prevAtt.Data.Target.Epoch
 }
+Could not sign partial attestation
