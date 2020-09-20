@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
+	"github.com/prysmaticlabs/go-bitfield"
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
 	"go.opencensus.io/trace"
@@ -71,13 +72,45 @@ func (v *validator) FetchSignerPubKeys(ctx context.Context) ([][]byte,error) {
 
 // An SSV specific function to sign an attestation as one participant of many
 func (v *validator) SignPartialAttestation(ctx context.Context, data *ethpb.AttestationData, pubKey [48]byte) {
+	log.Printf("%s", data)
 	sig, err := v.signAtt(ctx, pubKey, data)
 	if err != nil {
 		log.WithError(err).Error("Could not sign partial attestation")
 	}
 
+	// get duty to retreive committee
+	// TODO - maybe caan get from the SSV node
+	req := &ethpb.DutiesRequest{
+		Epoch:      data.Slot / params.BeaconConfig().SlotsPerEpoch,
+		PublicKeys: [][]byte{pubKey[:]},
+	}
+	resp, err := v.validatorClient.GetDuties(ctx, req)
+	if err != nil {
+		log.WithError(err).Error("could not get duty")
+	}
+	duty := resp.GetDuties()[0] // TODO - should not be hard coded
+
+	// find index in committee
+	var indexInCommittee uint64
+	var found bool
+	for i, vID := range duty.Committee {
+		if vID == duty.ValidatorIndex {
+			indexInCommittee = uint64(i)
+			found = true
+			break
+		}
+	}
+	if !found {
+		log.Errorf("Validator ID %d not found in committee of %v", duty.ValidatorIndex, duty.Committee)
+		return
+	}
+
+	// build attestation object
+	aggregationBitfield := bitfield.NewBitlist(uint64(len(duty.Committee)))
+	aggregationBitfield.SetBitAt(indexInCommittee, true)
 	attestation := &ethpb.Attestation{
 		Data:            data,
+		AggregationBits: aggregationBitfield,
 		Signature:       sig,
 	}
 
