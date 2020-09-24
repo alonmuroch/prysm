@@ -3,15 +3,16 @@ package client
 import (
 	"context"
 	"encoding/hex"
+	"io"
+
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
 	"github.com/prysmaticlabs/go-bitfield"
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
 	"go.opencensus.io/trace"
-	"io"
 )
 
-func (v *validator) NextTask(ctx context.Context) (<- chan *ethpb.SSVTask, error) {
+func (v *validator) NextTask(ctx context.Context) (<-chan *ethpb.SSVTask, error) {
 	ctx, span := trace.StartSpan(ctx, "validator.SSVTaskStream")
 	defer span.End()
 
@@ -21,7 +22,7 @@ func (v *validator) NextTask(ctx context.Context) (<- chan *ethpb.SSVTask, error
 	}
 
 	stream, error := v.ssvClient.GetTaskStream(ctx, &ethpb.StreamRequest{
-		Topics:               []ethpb.StreamTopics{
+		Topics: []ethpb.StreamTopics{
 			ethpb.StreamTopics_SIGN_BLOCK,
 			ethpb.StreamTopics_CHECK_BLOCK,
 			ethpb.StreamTopics_SIGN_ATTESTATION,
@@ -34,7 +35,6 @@ func (v *validator) NextTask(ctx context.Context) (<- chan *ethpb.SSVTask, error
 	for _, pubkey := range pubkeys {
 		log.Printf("Connected to SSV node streaming with pubkey: %s", hex.EncodeToString(pubkey))
 	}
-
 
 	if error != nil {
 		return nil, error
@@ -57,8 +57,9 @@ func (v *validator) NextTask(ctx context.Context) (<- chan *ethpb.SSVTask, error
 	return ret, nil
 }
 
-func (v *validator) FetchSignerPubKeys(ctx context.Context) ([][]byte,error) {
-	keys, err := v.keyManagerV2.FetchValidatingPublicKeys(ctx)
+func (v *validator) FetchSignerPubKeys(ctx context.Context) ([][]byte, error) {
+	//keys, err := v.keyManagerV2.FetchValidatingPublicKeys(ctx)
+	keys, err := v.keyManager.FetchValidatingKeys()
 	if err != nil {
 		return nil, err
 	}
